@@ -566,44 +566,55 @@ if(TARGET bgfx::shaderc)
 	# 	OUTPUT_DIR directory
 	# 	OUT_FILES_VAR variable name
 	# 	INCLUDE_DIRS directories
+	#	PROFILES profiles
+	#	PLATFORM platform
 	# 	[AS_HEADERS]
 	# )
 	#
 	function(bgfx_compile_shaders)
 		set(options AS_HEADERS)
-		set(oneValueArgs TYPE VARYING_DEF OUTPUT_DIR OUT_FILES_VAR)
-		set(multiValueArgs SHADERS INCLUDE_DIRS)
+		set(oneValueArgs TYPE VARYING_DEF OUTPUT_DIR OUT_FILES_VAR PLATFORM)
+		set(multiValueArgs SHADERS INCLUDE_DIRS PROFILES)
 		cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" "${ARGN}")
 
-		set(PROFILES 120 300_es spirv)
-		if(IOS)
-			set(PLATFORM IOS)
-			list(APPEND PROFILES metal)
-		elseif(ANDROID)
-			set(PLATFORM ANDROID)
-		elseif(UNIX AND NOT APPLE)
-			set(PLATFORM LINUX)
-		elseif(EMSCRIPTEN)
-			set(PLATFORM ASM_JS)
-		elseif(APPLE)
-			set(PLATFORM OSX)
-			list(APPEND PROFILES metal)
-		elseif(
-			WIN32
-			OR MINGW
-			OR MSYS
-			OR CYGWIN
-		)
-			set(PLATFORM WINDOWS)
-			list(APPEND PROFILES s_4_0)
-			list(APPEND PROFILES s_5_0)
-		elseif(ORBIS) # ORBIS should be defined by a PS4 CMake toolchain
-			set(PLATFORM ORBIS)
-			list(APPEND PROFILES pssl)
+		if(NOT ARGS_PROFILES)
+			set(PROFILES 120 300_es spirv)
+			if(IOS)
+				set(PLATFORM IOS)
+				list(APPEND PROFILES metal)
+			elseif(ANDROID)
+				set(PLATFORM ANDROID)
+			elseif(UNIX AND NOT APPLE)
+				set(PLATFORM LINUX)
+			elseif(EMSCRIPTEN)
+				set(PLATFORM ASM_JS)
+			elseif(APPLE)
+				set(PLATFORM OSX)
+				list(APPEND PROFILES metal)
+			elseif(
+				WIN32
+				OR MINGW
+				OR MSYS
+				OR CYGWIN
+			)
+				set(PLATFORM WINDOWS)
+				list(APPEND PROFILES s_4_0)
+				list(APPEND PROFILES s_5_0)
+			elseif(ORBIS) # ORBIS should be defined by a PS4 CMake toolchain
+				set(PLATFORM ORBIS)
+				list(APPEND PROFILES pssl)
+			else()
+				# pssl for Agc and Gnm renderers
+				# nvn for Nvn renderer
+				message(error "shaderc: Unsupported platform")
+			endif()
 		else()
-			# pssl for Agc and Gnm renderers
-			# nvn for Nvn renderer
-			message(error "shaderc: Unsupported platform")
+			if(NOT ARGS_PLATFORM)
+				message(error "profiles override set but no platform specified")
+			else()
+				set(PLATFORM ${ARGS_PLATFORM})
+			endif()
+			set(PROFILES ${ARGS_PROFILES})
 		endif()
 
 		set(ALL_OUTPUTS "")
